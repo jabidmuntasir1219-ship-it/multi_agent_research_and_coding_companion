@@ -7,10 +7,9 @@ This project routes user prompts through a hierarchical council of specialized a
 
 ## Overview
 
-Enterprise AI Authority is a modular LLM orchestration framework designed to simulate a structured decision-making system for AI-assisted work. Instead of relying on a single model response, it breaks a task into multiple expert roles, runs them through separate sub-councils, and then combines the results into one final answer. [file:128]
+Enterprise AI Authority is a modular LLM orchestration framework designed to simulate a structured decision-making system for AI-assisted work. Instead of relying on a single model response, it breaks a task into multiple expert roles, runs them through separate sub-councils, and then combines the results into one final answer. 
 
-The system is inspired by enterprise-style AI orchestration and is built to handle both research-heavy prompts and code-heavy prompts efficiently. It supports routing, retry logic, concurrency, model pacing, and final arbitration through a Supreme Council stage. [file:128][web:139][web:145]
-
+The system is inspired by enterprise-style AI orchestration and is built to handle both research-heavy prompts and code-heavy prompts efficiently. It supports routing, retry logic, concurrency, model pacing, and final arbitration through a Supreme Council stage. 
 ---
 
 ## Key Features
@@ -19,7 +18,7 @@ The system is inspired by enterprise-style AI orchestration and is built to hand
 The app first analyzes a user prompt and classifies it into one of three modes:
 - `CORE_RESEARCH`
 - `CORE_CODE`
-- `HYBRID_WORKLOAD` [file:128]
+- `HYBRID_WORKLOAD` 
 
 ### Research Sub-Council
 For research-heavy prompts, the system uses a multi-step board:
@@ -28,7 +27,7 @@ For research-heavy prompts, the system uses a multi-step board:
 - Fact-Checker,
 - Chair of Research Board.
 
-This creates a layered academic-style reasoning pipeline that challenges assumptions and synthesizes a final brief. [file:128]
+This creates a layered academic-style reasoning pipeline that challenges assumptions and synthesizes a final brief. 
 
 ### Technical Sub-Council
 For coding-heavy prompts, the system uses a technical board:
@@ -37,13 +36,13 @@ For coding-heavy prompts, the system uses a technical board:
 - Cyber Security Engineer,
 - Technical Director.
 
-This pipeline focuses on architecture, optimization, safety, and production readiness. [file:128]
+This pipeline focuses on architecture, optimization, safety, and production readiness. 
 
 ### Hybrid Parallel Execution
-If the prompt needs both research and coding, the system runs both sub-councils in parallel using a thread pool, then merges the outputs into one final verdict. [file:128]
+If the prompt needs both research and coding, the system runs both sub-councils in parallel using a thread pool, then merges the outputs into one final verdict. 
 
 ### Rate Limiting
-The framework includes a per-model cooldown system so requests are spaced safely and consistently. This helps reduce API pressure and makes the system more stable in multi-agent workflows. [file:128]
+The framework includes a per-model cooldown system so requests are spaced safely and consistently. This helps reduce API pressure and makes the system more stable in multi-agent workflows. 
 
 ### Retry and Error Handling
 The agent layer classifies API errors into:
@@ -51,10 +50,10 @@ The agent layer classifies API errors into:
 - transient,
 - rate-limited.
 
-Based on that classification, it applies adaptive retry behavior with backoff. [file:128]
+Based on that classification, it applies adaptive retry behavior with backoff. 
 
 ### Final Supreme Council
-After the sub-councils finish, a final arbitration stage synthesizes the research and technical briefs into one authoritative response. [file:128]
+After the sub-councils finish, a final arbitration stage synthesizes the research and technical briefs into one authoritative response. 
 
 ---
 
@@ -86,7 +85,7 @@ The system is organized as a hierarchical pipeline:
 4. **Supreme Council**
    - Merges and finalizes the response.
 
-This structure makes the application more than a wrapper around an LLM. It acts more like a coordinated AI decision engine. [file:128][web:139][web:144]
+This structure makes the application more than a wrapper around an LLM. It acts more like a coordinated AI decision engine. 
 
 ---
 
@@ -99,16 +98,16 @@ The user provides a prompt from the CLI or interactively.
 The router model decides whether the request is:
 - research,
 - code,
-- or hybrid. [file:128]
+- or hybrid. 
 
 ### 3. Specialist Agents
 Depending on the route, the framework launches:
 - a research pipeline,
 - a code pipeline,
-- or both in parallel. [file:128]
+- or both in parallel. 
 
 ### 4. Synthesis
-The Supreme Council combines the results and prints the final response to the terminal. [file:128]
+The Supreme Council combines the results and prints the final response to the terminal. 
 
 ---
 
@@ -121,17 +120,17 @@ This project includes several strong engineering concepts:
 - empty-response validation,
 - thread-safe model access,
 - modular role-based prompting,
-- concurrent hybrid execution. [file:128]
+- concurrent hybrid execution. 
 
-These are the kinds of details that make the project look like a serious AI systems engineering effort rather than a simple prompt wrapper. [web:139][web:145]
+These are the kinds of details that make the project look like a serious AI systems engineering effort rather than a simple prompt wrapper. 
 
 ---
 
 ## Why This Project Is Interesting
 
-This project demonstrates how multi-agent orchestration can improve structure, reliability, and specialization in AI systems. Modern agent frameworks often rely on sequential, concurrent, or handoff-based orchestration patterns, and your design fits that style well. [web:144][web:145]
+This project demonstrates how multi-agent orchestration can improve structure, reliability, and specialization in AI systems. Modern agent frameworks often rely on sequential, concurrent, or handoff-based orchestration patterns, and your design fits that style well. 
 
-It also reflects a real trend in LLM system design: using specialized agents to increase reasoning quality and reduce the weaknesses of single-model outputs. [web:139][web:143]
+It also reflects a real trend in LLM system design: using specialized agents to increase reasoning quality and reduce the weaknesses of single-model outputs. 
 
 ---
 
@@ -173,7 +172,7 @@ python your_script_name.py
 python your_script_name.py "Explain why multi-agent AI systems are useful for research workflows."
 ```
 
-For hybrid prompts, the system will run both the research and technical sub-councils and then synthesize the final answer. [file:128]
+For hybrid prompts, the system will run both the research and technical sub-councils and then synthesize the final answer. 
 
 ---
 
@@ -185,7 +184,7 @@ You can customize the following values in the script:
 - model cooldown times,
 - temperature settings for each agent role,
 - retry count,
-- default timeouts and pacing logic. [file:128]
+- default timeouts and pacing logic. 
 
 ---
 
@@ -197,7 +196,7 @@ You can customize the following values in the script:
 - Thread-safe rate limiting.
 - Supports both research and coding workflows.
 - Strong CLI-based workflow.
-- Good base for future extension into a full agent platform. [file:128]
+- Good base for future extension into a full agent platform. 
 
 ---
 
@@ -212,7 +211,7 @@ Possible upgrades include:
 - tool use for code execution and retrieval,
 - citation-aware final synthesis,
 - role-specific memory systems,
-- support for more models and providers. [file:128][web:144][web:145]
+- support for more models and providers. 
 
 ---
 
@@ -226,14 +225,14 @@ This project helped demonstrate skills in:
 - error recovery,
 - systems design,
 - agent-based reasoning pipelines,
-- production-style software structure. [file:128]
+- production-style software structure. 
 
 ---
 
 ## Disclaimer
 
 This project is intended for educational and experimental use.  
-It is not a replacement for human judgment, especially in high-stakes research or deployment settings. [web:143][web:145]
+It is not a replacement for human judgment, especially in high-stakes research or deployment settings. 
 
 ---
 
