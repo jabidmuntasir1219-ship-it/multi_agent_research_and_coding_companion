@@ -4,8 +4,10 @@ import os
 import sys
 import time
 import threading
+import re
 from typing import Dict, Optional
 from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 
 from google import genai
 from google.genai import types
@@ -79,7 +81,6 @@ class ModelRateLimiter:
                 
                 if remaining <= 0:
                     self._last_call[model] = now
-                    # Wake up any other waiting threads so they can recalculate their slots
                     cond.notify_all()
                     break
                 
@@ -126,7 +127,6 @@ class EnterpriseAIAuthority:
 
         for attempt in range(max_retries + 1):
             try:
-                # Pacing check happens immediately before execution attempt
                 self.rate_limiter.wait_and_reserve(model)
                 
                 logger.info(f"Dispatching payload to model -> '{model}' (Attempt {attempt + 1})")
@@ -163,8 +163,25 @@ class EnterpriseAIAuthority:
                     raise RuntimeError(f"Fatal: Agent execution failed after {max_retries + 1} attempts: {e}") from e
         return ""
 
+    
     def route_user_prompt(self, user_query: str) -> str:
-        logger.info("[Gatekeeper Router] Analyzing workload metadata and structural context...")
+        """
+        Determines the routing mode.
+        If the user explicitly includes a marker like 'MATRIX:CORE_RESEARCH' in the query,
+        that mode is used directly and the marker is stripped from the internal query.
+        Otherwise, the LLM router is called.
+        """
+        pattern = r"(?i)\bMATRIX\s*:\s*(CORE_RESEARCH|CORE_CODE|HYBRID_WORKLOAD)\b"
+        match = re.search(pattern, user_query)
+        
+        if match:
+            mode = match.group(1).upper()
+            cleaned_query = re.sub(pattern, "", user_query).strip()
+            self._cleaned_user_query = cleaned_query
+            logger.info(f"[Gatekeeper Router] User override detected: using '{mode}' (marker stripped).")
+            return mode
+
+        logger.info("[Gatekeeper Router] No user override. Analyzing workload via LLM...")
         router_instruction = (
             "You are the Gatekeeper Router of an advanced multi‑agent ecosystem. Your sole job is to classify "
             "the user's prompt into exactly one of three operational modes based on its requirements:\n"
@@ -185,15 +202,22 @@ class EnterpriseAIAuthority:
 
             if classification not in ("CORE_RESEARCH", "CORE_CODE", "HYBRID_WORKLOAD"):
                 logger.warning("Router returned an unrecognized label: '%s'. Defaulting to HYBRID_WORKLOAD.", classification)
-                return "HYBRID_WORKLOAD"
-            return classification
+                mode = "HYBRID_WORKLOAD"
+            else:
+                mode = classification
+            
+            self._cleaned_user_query = user_query
+            return mode
+
         except Exception as e:
             logger.warning("Gatekeeper routing failed (%s). Defaulting to HYBRID_WORKLOAD.", e)
+            self._cleaned_user_query = user_query
             return "HYBRID_WORKLOAD"
 
+    
     def run_research_sub_council(self, user_query: str) -> str:
         logger.info("[Sub‑Council A] Academic & Research Board Convened.")
-        sys_1 = "You are a world‑class Scientific Research Lead. Provide a rigorous, evidence‑based theoretical analysis of the domain problem."
+        sys_1 = "You are a world‑class Scientific,Buisiness,Marketing and eduxation Research Lead. Provide a rigorous, evidence‑based theoretical analysis of the domain problem."
         thesis = self._execute_agent(sys_1, user_query, temp=TEMP_RESEARCH_LEAD)
         logger.info("   -> A1 (Research Lead): Foundational thesis compiled.")
 
@@ -229,30 +253,32 @@ class EnterpriseAIAuthority:
         logger.info("[Sub‑Council B] Engineering Brief Signed Off.")
         return engineering_brief
 
+    
     def deploy_authority(self, user_query: str) -> str:
         if not user_query or not user_query.strip():
             raise ValueError("user_query must be a non‑empty string.")
 
         start_time = time.time()
         routing_mode = self.route_user_prompt(user_query)
+        effective_query = getattr(self, "_cleaned_user_query", user_query)
+        
         logger.info("[Routing Matrix] Cluster identified as -> %s", routing_mode)
 
         research_brief = "Skipped by routing engine optimization."
         engineering_brief = "Skipped by routing engine optimization."
 
         if routing_mode == "CORE_RESEARCH":
-            research_brief = self.run_research_sub_council(user_query)
+            research_brief = self.run_research_sub_council(effective_query)
         elif routing_mode == "CORE_CODE":
-            engineering_brief = self.run_technical_sub_council(user_query)
+            engineering_brief = self.run_technical_sub_council(effective_query)
         else:
             with ThreadPoolExecutor(max_workers=2) as executor:
-                future_research = executor.submit(self.run_research_sub_council, user_query)
-                future_technical = executor.submit(self.run_technical_sub_council, user_query)
+                future_research = executor.submit(self.run_research_sub_council, effective_query)
+                future_technical = executor.submit(self.run_technical_sub_council, effective_query)
 
-                # Use explicit built-in standard TimeoutError handling robustly
                 try:
                     research_brief = future_research.result(timeout=600)
-                except TimeoutError:
+                except FuturesTimeoutError:
                     logger.error("Research sub‑council timed out after 600 seconds.")
                     research_brief = "[Research Sub‑Council timed out]"
                 except Exception as e:
@@ -261,7 +287,7 @@ class EnterpriseAIAuthority:
 
                 try:
                     engineering_brief = future_technical.result(timeout=600)
-                except TimeoutError:
+                except FuturesTimeoutError:
                     logger.error("Technical sub‑council timed out after 600 seconds.")
                     engineering_brief = "[Technical Sub‑Council timed out]"
                 except Exception as e:
@@ -277,7 +303,7 @@ class EnterpriseAIAuthority:
         )
 
         supreme_input = f"""
-        USER INQUIRY: {user_query}
+        USER INQUIRY: {effective_query}
         ENGINE PIPELINE MODE: {routing_mode}
 
         =========================================
