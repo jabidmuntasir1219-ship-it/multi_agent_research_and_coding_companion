@@ -1,4 +1,23 @@
+# Environment variables (Contains your API key!)
 .env
+
+# Python bytecode
 __pycache__/
 *.py[cod]
-*.egg-info/
+*.so
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE settings
+.vscode/
+.idea/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
